@@ -18,7 +18,7 @@ use std::{fs, io::Read as _};
 
 use rust_rocksdb::{
     BlockBasedOptions, BlockBasedPinningTier, Cache, DBCompactionPri, DBCompressionType,
-    DataBlockIndexType, Env, Options, ReadOptions, DB,
+    DataBlockIndexType, Env, LruCacheOptions, Options, ReadOptions, DB,
 };
 use util::DBPath;
 
@@ -420,4 +420,33 @@ fn test_set_callback_logger() {
         let _db = DB::open(&opts, &path).unwrap();
     }
     assert!(msgs > 0, "callback logger produced no messages!");
+}
+
+#[test]
+fn test_lru_cache_custom_opts() {
+    let path = DBPath::new("_set_blob_cache");
+
+    let mut lru_opts = LruCacheOptions::default();
+    lru_opts.set_capacity(16 * 1024 * 1024);
+    lru_opts.set_num_shard_bits(2);
+    let cache = Cache::new_lru_cache_opts(&lru_opts);
+
+    let mut opts = Options::default();
+    opts.create_if_missing(true);
+    opts.set_row_cache(&cache);
+
+    // Must work even if we dropped the options: test that.
+    drop(lru_opts);
+
+    let db = DB::open(&opts, &path).unwrap();
+
+    const KEY: &[u8] = b"k1";
+    const VALUE: &[u8] = b"01234567890123456789";
+    db.put(KEY, VALUE).unwrap();
+
+    // Cache miss
+    assert_eq!(&*db.get(KEY).unwrap().unwrap(), VALUE);
+
+    // Cache hit
+    assert_eq!(&*db.get(KEY).unwrap().unwrap(), VALUE);
 }
