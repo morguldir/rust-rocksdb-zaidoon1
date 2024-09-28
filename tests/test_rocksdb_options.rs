@@ -413,7 +413,7 @@ fn test_set_callback_logger() {
     {
         let mut opts = Options::default();
         opts.create_if_missing(true);
-        opts.set_callback_logger(Debug, &mut |_lev, _msg| {
+        opts.set_callback_logger(Debug, &|_lev, _msg| {
             msgs += 1;
         });
 

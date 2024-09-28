@@ -3459,25 +3459,38 @@ impl Options {
         }
     }
 
-    /// Invokes callback with log message.
-    pub fn set_callback_logger<F>(&mut self, log_level: LogLevel, func: &F)
+    /// Invokes callback with log messages.
+    ///
+    /// # Examples
+    /// ```
+    /// use rust_rocksdb::{LogLevel, Options};
+    ///
+    /// let mut options = Options::default();
+    /// options.set_callback_logger(LogLevel::Debug, &|level, msg| println!("{level:?} {msg}"));
+    /// ```
+    pub fn set_callback_logger<'a, F>(&mut self, log_level: LogLevel, func: &'a F)
     where
-        F: for<'a> FnMut(LogLevel, &'a str) + RefUnwindSafe + Send + Sync + 'static,
+        F: for<'b> FnMut(LogLevel, &'b str) + RefUnwindSafe + Send + Sync + 'a,
     {
-        let opaque = std::ptr::from_ref(func).cast::<c_void>();
+        let func = func as *const F;
+        let func = func.cast::<c_void>();
         unsafe {
             let logger = ffi::rocksdb_logger_create_callback_logger(
                 log_level as c_int,
-                Some(Self::logger_callback::<F>),
-                opaque.cast_mut(),
+                Some(Self::logger_callback::<'a, F>),
+                func.cast_mut(),
             );
             ffi::rocksdb_options_set_info_log(self.inner, logger);
         }
     }
 
-    extern "C" fn logger_callback<F>(func: *mut c_void, level: u32, msg: *mut c_char, len: usize)
-    where
-        F: for<'a> FnMut(LogLevel, &'a str) + RefUnwindSafe + Send + Sync + 'static,
+    extern "C" fn logger_callback<'a, F>(
+        func: *mut c_void,
+        level: u32,
+        msg: *mut c_char,
+        len: usize,
+    ) where
+        F: for<'b> FnMut(LogLevel, &'b str) + RefUnwindSafe + Send + Sync + 'a,
     {
         use std::{mem, process, str};
 
