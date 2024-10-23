@@ -44,7 +44,7 @@ zstd-static-linking-only = []
 
 [dependencies]
 libc = "0.2"
-tikv-jemalloc-sys = { git = "https://github.com/girlbossceo/jemallocator", rev = "c32af15f3b440ae5e46c3404f78b19093bbd5294", features = [
+tikv-jemalloc-sys = { git = "https://github.com/girlbossceo/jemallocator", rev = "d87938bfddc26377dd7fdf14bbcd345f3ab19442", features = [
     "unprefixed_malloc_on_supported_platforms",
 ], optional = true }
 lz4-sys = { version = "1.10", optional = true }
