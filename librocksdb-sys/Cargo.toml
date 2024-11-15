@@ -28,11 +28,9 @@ exclude = [
 ]
 
 [features]
-default = ["static", "bindgen/runtime"]
+default = ["static"]
 jemalloc = ["tikv-jemalloc-sys"]
 static = ["libz-sys?/static", "bzip2-sys?/static"]
-bindgen-runtime = ["bindgen/runtime"]
-bindgen-static = ["bindgen/static"]
 mt_static = []
 io-uring = ["pkg-config"]
 snappy = []
@@ -60,6 +58,6 @@ uuid = { version = "1", features = ["v4"] }
 
 [build-dependencies]
 cc = { version = "1.0", features = ["parallel"] }
-bindgen = { version = "0.69", default-features = false }
+bindgen = { version = "0.69", default-features = false, features = ["runtime"] }
 glob = "0.3"
 pkg-config = { version = "0.3", optional = true }
